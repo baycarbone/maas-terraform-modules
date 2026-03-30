@@ -11,16 +11,20 @@ terraform {
   //
   // Assume that a user consuming this unit will exclusively have access
   // to the directory this file is in, and nothing else in this repository.
-  source = "git::https://github.com/canonical/maas-terraform-modules.git//modules/maas-config?ref=${values.version}"
+  source = "git::https://github.com/canonical/maas-terraform-modules.git//modules/maas-config?ref=${try(coalesce(values.version), "")}"
 }
 
 dependency "maas_deploy" {
-  config_path = values.maas_deploy_path
+  config_path = try(values.maas_deploy_path, null)
 
   mock_outputs = {
-    maas_api_url = "url"
-    maas_api_key = "key"
+    maas_api_url = "http://maas.local"
+    maas_api_key = "abcd"
   }
+}
+
+dependencies {
+  paths = try(values.dependencies, [])
 }
 
 locals {
@@ -45,8 +49,8 @@ inputs = merge({
   },
   {
     // Dependent variables
-    maas_url = dependency.maas_deploy.outputs.maas_api_url
-    maas_key = dependency.maas_deploy.outputs.maas_api_key
+    maas_url = coalesce(values.maas_url, try(dependency.maas_deploy.outputs.maas_api_url, null))
+    maas_key = coalesce(values.maas_key, try(dependency.maas_deploy.outputs.maas_api_key, null))
 
     // Required variables
     // (none)
